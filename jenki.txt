@@ -1,0 +1,87 @@
+pipeline {
+    parameters {
+  choice choices: ['dev', 'stg', 'master'], description: 'Please select your branch', name: 'Branch'
+}
+
+    agent any
+environment {
+  PATH = "/opt/maven/bin:$PATH"
+}
+    stages {
+        stage('Hello') {
+            steps {
+                echo 'Hello World'
+            }
+        }
+        stage('checkout'){
+            steps{
+                checkout(
+                    [
+                        $class: 'GitSCM',
+                         branches: [[
+                             name: "*/${Branch}"
+                             ]
+                         ], 
+                         extensions: [],
+                          userRemoteConfigs: [
+                              [
+                                  credentialsId: 'bhanu-github',
+                                   url: 'https://github.com/bbattala/myapp.git'
+                                   ]
+                                   ]
+                                   ]
+                                   )
+            }
+        }
+        stage('Build'){
+            steps{
+                sh 'mvn clean package'
+            }
+        }
+        stage('Upload Artifact'){
+            steps{
+                script{
+                 def mavenpom = readMavenPom file: 'pom.xml'
+                nexusArtifactUploader artifacts: 
+                [
+                    [
+                        artifactId: 'hello-world-war', 
+                        classifier: '', 
+                        file: "target/hello-world-war-${mavenpom.version}.war",
+                         type: 'war'
+                         ]
+                         ],
+                          credentialsId: 'Nexus-cred', 
+                          groupId: 'com.efsavage', 
+                          nexusUrl: '3.6.122.180:8081', 
+                          nexusVersion: 'nexus3', 
+                          protocol: 'http',
+                           repository: 'enfec',
+                            version: "${mavenpom.version}"
+                }
+                
+            }
+        }
+        stage('Rename'){
+            steps{
+                sh 'mv target/*.war target/hello.war'
+            }
+        }
+        stage('Deploy'){
+            steps{
+                ansiblePlaybook credentialsId: 'ansible-cred', disableHostKeyChecking: true, installation: 'ansible2', inventory: 'myinv', playbook: 'deploy.yml'
+            }
+        }
+    }
+    post{
+        failure {
+            mail to: 'bhanukiran.battala@xxxx.com,suresh.siripuram@xxxx.com', from: 'bhanukiran213@gmail.com',
+                subject: "buld status: ${env.JOB_NAME} - Failed", 
+                body: "Job Failed - \"${env.JOB_NAME}\" build: ${env.BUILD_NUMBER}\n\nView the log at:\n ${env.BUILD_URL}\n\nBlue Ocean:\n${env.RUN_DISPLAY_URL}"
+        }
+        success {
+            mail to: 'bhanukiran.battala@xxxxxx.com,suresh.siripuram@xxxx.com', from: 'bhanukiran213@gmail.com',
+                subject: "buld status: ${env.JOB_NAME} - success", 
+                body: "Job success - \"${env.JOB_NAME}\" build: ${env.BUILD_NUMBER}\n\nView the log at:\n ${env.BUILD_URL}\n\nBlue Ocean:\n${env.RUN_DISPLAY_URL}"
+        }
+    }
