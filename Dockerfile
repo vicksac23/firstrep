@@ -1,5 +1,5 @@
-FROM bhanukiran213/mytomcat:latest
-MAINTAINER Bhanu
+FROM viraj23/mytomcat:latest
+MAINTAINER Vicky
 # COPY path-to-your-application-war path-to-webapps-in-docker-tomcat
 COPY ./target/hello.war /opt/tomcat/webapps/
 EXPOSE 8080
