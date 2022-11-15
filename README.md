@@ -1,1 +1,3 @@
-# firstrep
+# maven-project
+
+Simple Maven Project

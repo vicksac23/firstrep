@@ -1,6 +1,6 @@
-FROM viraj23/mytomcat:latest
-MAINTAINER Vicky
-# COPY path-to-your-application-war path-to-webapps-in-docker-tomcat
-COPY ./target/hello.war /opt/tomcat/webapps/
-EXPOSE 8080
-CMD ["/opt/tomcat/bin/catalina.sh", "run"]
+# Pull base image 
+From tomcat:8-jre8 
+
+# Maintainer 
+MAINTAINER "valaxytech@gmail.com" 
+COPY ./webapp.war /usr/local/tomcat/webapps
